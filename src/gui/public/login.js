@@ -1,4 +1,4 @@
-let userNameBox, passwordBox, loginButton, signupButton, title, subtitle, card;
+let userNameBox, passwordBox, loginButton, signupButton, title, subtitle, card, img;
 
 function setup() {
   noCanvas();
@@ -7,6 +7,11 @@ function setup() {
   card = createDiv();
   card.addClass("login-card");
 
+  // Add logo
+  let logo = createImg('assets/cicla_logo.png', 'Cicla Logo');
+  logo.parent(card);
+  logo.addClass('login-logo');
+
   // Title
   title = createElement("h2", "Welcome!");
   title.parent(card);
@@ -14,7 +19,7 @@ function setup() {
   // Subtitle
   subtitle = createP("Log in to continue");
   subtitle.parent(card);
-
+  
   // Username input
   userNameBox = createInput();
   userNameBox.attribute("placeholder", "Enter your username");

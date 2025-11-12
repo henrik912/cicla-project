@@ -1,0 +1,82 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #2e2e2e;
+  font-family: "Poppins", sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Login card container */
+.login-card {
+  background-color: white;
+  border-radius: 24px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  width: 90%;
+  max-width: 400px;
+  padding: 40px 30px;
+  text-align: center;
+}
+
+/* Title and subtitle */
+.login-card h2 {
+  color: #222;
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.login-card p {
+  color: #555;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+/* Input fields */
+input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* Buttons */
+button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.login-btn {
+  background-color: #ff4b4b;
+  color: white;
+  border: none;
+}
+
+.login-btn:hover {
+  background-color: #ff2e2e;
+}
+
+.signup-btn {
+  background-color: white;
+  border: 1px solid #ff4b4b;
+  color: #ff4b4b;
+  margin-top: 10px;
+}
+
+.signup-btn:hover {
+  background-color: #ffeaea;
+}
+
+/* Terms text */
+.terms {
+  font-size: 12px;
+  color: #888;
+  margin-top: 20px;
+}

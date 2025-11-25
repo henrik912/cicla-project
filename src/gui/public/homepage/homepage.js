@@ -38,6 +38,8 @@ onAuthStateChanged(auth, (user) => {
 let homeCard, navbar, menuBtn, logo, accountBtn, mapArea, findNearestBtn, helpBtn;
 let currentPopup = null;
 
+
+window.setup = () => {}; // Prevent p5 from auto-calling setup
 function setup() {
   noCanvas();
 
@@ -69,11 +71,6 @@ function setup() {
     <div class="legend-item"><span class="legend-dot legend-red"></span><span class="legend-label">&lt;20% available</span></div>
   `);
 
-  //Add sample stations
-  addPin(18, 38, "green", "Rossio", 8, 15);
-  addPin(43, 25, "orange", "Avenida", 4, 15);
-  addPin(47, 63, "red", "Commerce Sq.", 2, 15);
-
   //Buttons
   findNearestBtn = createButton('Find nearest station').addClass('find-nearest-btn').parent(homeCard);
   helpBtn = createButton("?").addClass('help-btn').parent(homeCard);
@@ -83,7 +80,165 @@ function setup() {
 
   //Now that window.toggleAccountDrawer exists, wire the button
   accountBtn.mousePressed(() => window.toggleAccountDrawer());
+
+  window.initMap();
 }
+
+const staticLandmarks = [
+  {
+    name: "Praça do Comércio",
+    position: { lat: 38.7079, lng: -9.1366 }
+  },
+  {
+    name: "Rossio Square",
+    position: { lat: 38.7142, lng: -9.1400 }
+  },
+  {
+    name: "Avenida da Liberdade",
+    position: { lat: 38.7202, lng: -9.1440 }
+  },
+  {
+    name: "Belém Tower",
+    position: { lat: 38.6916, lng: -9.2159 }
+  },
+  {
+    name: "Parque Eduardo VII",
+    position: { lat: 38.7276, lng: -9.1526 }
+  },
+  {
+    name: "IADE",
+    position: { lat: 38.781931, lng: -9.102924}
+  }
+];
+
+let googleMap = null;
+let userLocationMarker = null;
+let directionsService = null;
+let directionsRenderer = null;
+
+
+window.initMap = function () {
+  googleMap = new google.maps.Map(document.querySelector('.map-area'), {
+    center: { lat: 38.7223, lng: -9.1393 },
+    zoom: 14,
+    disableDefaultUI: true,
+    gestureHandling: "greedy",
+  });
+  console.log("Google Map initialized!");
+  addStaticLandmarks();
+  addUserLocation();
+  directionsService = new google.maps.DirectionsService();
+  directionsRenderer = new google.maps.DirectionsRenderer({
+    map: googleMap,
+    suppressMarkers: true, //in order to keep the custom pins
+  });
+};
+
+function routeTo(destination) {
+  if (!userLocationMarker) {
+    alert("User location not known yet!");
+    return;
+  }
+
+  const origin = userLocationMarker.getPosition(); // user's LatLng
+  const destLatLng = new google.maps.LatLng(destination.lat, destination.lng);
+
+  directionsService.route(
+    {
+      origin: origin,
+      destination: destLatLng,
+      travelMode: google.maps.TravelMode.BICYCLING, // ← Bicycle route
+    },
+    (result, status) => {
+      if (status === "OK") {
+        directionsRenderer.setDirections(result);
+      } else {
+        alert("Could not calculate route: " + status);
+      }
+    }
+  );
+}
+
+
+
+function addStaticLandmarks() {
+  staticLandmarks.forEach((landmark) => {
+    const capacity = Math.floor(Math.random() * 12) + 1;
+    const total = 12; 
+    const percent = (capacity / total) * 100;
+
+    let pinColor = "green";
+    if (percent <= 20) pinColor = "red";
+    else if (percent <= 50) pinColor = "yellow";
+
+    const marker = new google.maps.Marker({
+      position: landmark.position,
+      map: googleMap,
+      title: landmark.name,
+      icon: {
+        url: `https://maps.google.com/mapfiles/ms/icons/${pinColor}-dot.png`,
+        scaledSize: new google.maps.Size(42, 42)
+      }
+    });
+
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div class="marker-popup">
+          <strong class="popup-title">${landmark.name}</strong>
+          <div class="popup-capacity">🚴 Spots available: ${capacity}/${total}</div>
+          <button class="popup-btn" id="route-btn-${landmark.name.replace(/\s+/g,'-')}">Get route to here</button>
+        </div>
+      `
+    });
+
+    marker.addListener("click", () => {
+      infoWindow.open(googleMap, marker);
+      google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
+        const btn = document.getElementById(`route-btn-${landmark.name.replace(/\s+/g,'-')}`);
+        if (btn) btn.onclick = () => routeTo(landmark.position);
+      });
+    });
+  });
+}
+
+
+function addUserLocation() {
+  if (!navigator.geolocation) return;
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const coords = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      };
+
+      console.log("User location:", coords);
+
+      // Create marker
+      if (!userLocationMarker) {
+        userLocationMarker = new google.maps.Marker({
+          position: coords,
+          map: googleMap,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 12,
+            fillColor: "#4285F4",
+            fillOpacity: 1,
+            strokeWeight: 2,
+            strokeColor: "white"
+          }
+        });
+      } else {
+        userLocationMarker.setPosition(coords);
+      }
+
+      // 🔥 Center map on user *now that we have the coordinates*
+      googleMap.panTo(coords);
+    }
+  );
+}
+
+
 
 function createAccountDrawer() {
   const accountDrawer = createDiv().addClass('account-drawer').parent(homeCard);
@@ -154,37 +309,6 @@ function createAccountDrawer() {
   window.toggleAccountDrawer = () => {
     accountDrawer.toggleClass('open');
   };
-}
-
-function addPin(xPercent, yPercent, color, stationName, bikes, total) {
-  const pinDiv = createDiv().addClass("station-pin " + color).parent(homeCard);
-  pinDiv.style('position', 'absolute');
-  pinDiv.style('left', xPercent + '%');
-  pinDiv.style('top', yPercent + '%');
-  pinDiv.mousePressed(() => showStationPopup(xPercent, yPercent, color, stationName, bikes, total));
-}
-
-function showStationPopup(xPercent, yPercent, color, stationName, bikes, total) {
-  if (currentPopup) currentPopup.remove();
-  currentPopup = createDiv().addClass("station-popup").parent(homeCard);
-  currentPopup.style('position', 'absolute');
-  currentPopup.style('left', `calc(${xPercent}% - 70px)`);
-  currentPopup.style('top', `calc(${yPercent}% - 110px)`);
-
-  const closeBtn = createButton("×").addClass("popup-close-btn").parent(currentPopup);
-  closeBtn.mousePressed(() => {
-    currentPopup.remove();
-    currentPopup = null;
-  });
-
-  createElement('b', stationName).parent(currentPopup);
-  createDiv(`🚴‍♂️ <b>${bikes}/${total}</b> bikes available`)
-    .style('font-size', '22px')
-    .style('margin-bottom', '9px')
-    .parent(currentPopup);
-
-  const navBtn = createButton("Navigate").addClass("navigate-btn").parent(currentPopup);
-  navBtn.mousePressed(() => alert('Navigation not implemented.'));
 }
 
 //Password Update Logic

@@ -13,11 +13,16 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+let termsText = [];
 
 // instance mode
 const sketch = (p) => {
   let userNameBox, passwordBox, loginButton, signupButton, title, subtitle, card;
   let registrationPopup, closePopupButton, regNameInput, regLastNameInput, regEmailInput, regPasswordInput, createAccountBtn;
+
+  p.preload = () => {
+    termsText = p.loadStrings("assets/toa.txt");
+  };
 
   p.setup = () => {
     console.log("setup running");
@@ -53,10 +58,44 @@ const sketch = (p) => {
     signupButton.parent(card);
     signupButton.addClass("signup-btn");
     signupButton.mousePressed(showRegistrationPopup);
+    
 
-    const terms = p.createP('By continuing, you agree to our <a href="#" style="color:#ff4b4b; text-decoration:none;">Terms and Conditions</a>');
+    const terms = p.createP('By continuing, you agree to our <a href="#" class="terms-link">Terms and Conditions</a>');
     terms.parent(card);
     terms.addClass("terms");
+
+    // Terms popup
+    const popupOverlay = p.createDiv();
+    popupOverlay.addClass("popup-overlay");
+    popupOverlay.hide();
+
+    const popupCard = p.createDiv();
+    popupCard.addClass("registration-card");
+    popupCard.parent(popupOverlay);
+
+    const popupTitle = p.createElement("h2", "Terms of Agreement");
+    popupTitle.parent(popupCard);
+
+    // Scrollable box
+    const scrollBox = p.createDiv();
+    scrollBox.addClass("terms-scroll");
+    scrollBox.parent(popupCard);
+
+    // Insert text loaded from txt file
+    const popupText = p.createP(termsText.join("<br>"));
+    popupText.parent(scrollBox);
+
+    const closeTermsBtn = p.createButton("Close");
+    closeTermsBtn.parent(popupCard);
+    closeTermsBtn.addClass("login-btn");
+
+    closeTermsBtn.mousePressed(() => popupOverlay.hide());
+
+    // Open popup
+    terms.elt.querySelector(".terms-link").addEventListener("click", (e) => {
+      e.preventDefault();
+      popupOverlay.show();
+    });
   };
 
   const login = async () => {
@@ -109,6 +148,7 @@ const sketch = (p) => {
     closePopupButton.parent(popupCard);
     closePopupButton.addClass("close-btn");
     closePopupButton.mousePressed(closePopup);
+  
   };
 
   const closePopup = () => {

@@ -22,11 +22,80 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+// 🔥 GLOBALS
+let homeCard, navbar, menuBtn, logo, accountBtn, mapArea, findNearestBtn, helpBtn;
+let currentPopup = null;
+let currentInfoWindow = null;
+let mapClickListener = null;
+let escKeyListener = null;
+let googleMap = null;
+let userLocationMarker = null;
+let directionsService = null;
+let directionsRenderer = null;
+let parkingOverlay = null;
+let parkingHistoryDrawer = null;
+let parkingCloseBtn = null;
+
+let placeholderParkingHistory = [
+  {
+    date: "2025-11-28",
+    time: "14:32",
+    duration: "2h 15m",
+    cost: "1.2 €"
+  },
+  {
+    date: "2025-11-27",
+    time: "09:15",
+    duration: "1h 45m",
+    cost: "0.9 €"
+  },
+  {
+    date: "2025-11-26",
+    time: "17:50",
+    duration: "3h 10m",
+    cost: "1.8 €"
+  },
+  {
+    date: "2025-11-25",
+    time: "12:05",
+    duration: "55m",
+    cost: "0.6 €"
+  }
+];
+
+const staticLandmarks = [
+  { name: "Praça do Comércio", position: { lat: 38.7079, lng: -9.1366 } },
+  { name: "Rossio Square", position: { lat: 38.7142, lng: -9.1400 } },
+  { name: "Avenida da Liberdade", position: { lat: 38.7202, lng: -9.1440 } },
+  { name: "Belém Tower", position: { lat: 38.6916, lng: -9.2159 } },
+  { name: "Parque Eduardo VII", position: { lat: 38.7276, lng: -9.1526 } },
+  { name: "IADE", position: { lat: 38.781931, lng: -9.102924 } },
+  { name: "Alfama District", position: { lat: 38.7115, lng: -9.1305 } },
+  { name: "Bairro Alto", position: { lat: 38.7103, lng: -9.1450 } },
+  { name: "Carmo Convent", position: { lat: 38.7110, lng: -9.1410 } },
+  { name: "Castelo de São Jorge", position: { lat: 38.7139, lng: -9.1334 } },
+  { name: "Chiado", position: { lat: 38.7098, lng: -9.1415 } },
+  { name: "EDP Cool Jazz Festival Venue (near Belém)", position: { lat: 38.6960, lng: -9.2050 } },
+  { name: "Jerónimos Monastery", position: { lat: 38.6987, lng: -9.2064 } },
+  { name: "Lisbon Cathedral (Sé de Lisboa)", position: { lat: 38.7098, lng: -9.1333 } },
+  { name: "LX Factory", position: { lat: 38.7025, lng: -9.1770 } },
+  { name: "Miradouro da Senhora do Monte", position: { lat: 38.7183, lng: -9.1342 } },
+  { name: "Miradouro de Santa Catarina", position: { lat: 38.7075, lng: -9.1600 } },
+  { name: "Museu Nacional do Azulejo", position: { lat: 38.7150, lng: -9.1270 } },
+  { name: "Oceanário de Lisboa", position: { lat: 38.7640, lng: -9.0950 } },
+  { name: "Padrão dos Descobrimentos", position: { lat: 38.6938, lng: -9.2059 } },
+  { name: "Parque das Nações", position: { lat: 38.7630, lng: -9.0950 } },
+  { name: "Santa Justa Lift", position: { lat: 38.7128, lng: -9.1399 } },
+  { name: "Time Out Market", position: { lat: 38.7075, lng: -9.1365 } },
+  { name: "Tram 28 Route Start (Martim Moniz)", position: { lat: 38.7140, lng: -9.1390 } },
+  { name: "Vasco da Gama Tower", position: { lat: 38.7606, lng: -9.0997 } },
+  { name: "JONKOPING", position: { lat: 57.78145, lng: 14.15618 } }
+];
+
 //Auth gate: delay setup so p5 is ready
 onAuthStateChanged(auth, (user) => {
   if (user) {
     console.log("User is logged in:", user.email);
-    //Schedule setup so p5 has fully initialized its globals
     requestAnimationFrame(() => setup());
   } else {
     console.log("No user logged in — redirecting to login.");
@@ -34,34 +103,28 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-//p5.js setup and UI logic (global mode)
-let homeCard, navbar, menuBtn, logo, accountBtn, mapArea, findNearestBtn, helpBtn;
-let currentPopup = null;
+window.setup = () => {};
 
-
-window.setup = () => {}; // Prevent p5 from auto-calling setup
 function setup() {
   noCanvas();
 
-  //Main Card
   homeCard = createDiv();
   homeCard.addClass('home-card');
 
-  //Navbar
   navbar = createDiv();
   navbar.addClass('navbar');
   navbar.parent(homeCard);
 
-  menuBtn = createDiv("&#9776;").addClass('nav-btn').parent(navbar);
-  logo = createDiv('<img src="assets/cicla_logo.png" style="height:45px;vertical-align:middle;">').addClass('nav-logo').parent(navbar);
-  accountBtn = createDiv("&#128100;").addClass('nav-btn').parent(navbar);
+  menuBtn = createDiv("☰").addClass('nav-btn').parent(navbar);
+  logo = createDiv('<img src="assets/cicla_logo.png" style="height:45px;vertical-align:middle;">')
+    .addClass('nav-logo')
+    .parent(navbar);
+  accountBtn = createDiv("👤").addClass('nav-btn').parent(navbar);
 
-  //Map Area
   mapArea = createDiv();
   mapArea.addClass('map-area');
   mapArea.parent(homeCard);
 
-  //Legend
   let legend = createDiv();
   legend.addClass("legend-box");
   legend.parent(homeCard);
@@ -71,54 +134,171 @@ function setup() {
     <div class="legend-item"><span class="legend-dot legend-red"></span><span class="legend-label">&lt;20% available</span></div>
   `);
 
-  //Buttons
   findNearestBtn = createButton('Find nearest station').addClass('find-nearest-btn').parent(homeCard);
   helpBtn = createButton("?").addClass('help-btn').parent(homeCard);
 
-  //Build account drawer before wiring the button (so the handler exists)
+  createParkingHistoryDrawer();
   createAccountDrawer();
 
-  //Now that window.toggleAccountDrawer exists, wire the button
   accountBtn.mousePressed(() => window.toggleAccountDrawer());
+  menuBtn.mousePressed(toggleParkingHistoryDrawer);
 
   window.initMap();
 }
 
-const staticLandmarks = [
-  {
-    name: "Praça do Comércio",
-    position: { lat: 38.7079, lng: -9.1366 }
-  },
-  {
-    name: "Rossio Square",
-    position: { lat: 38.7142, lng: -9.1400 }
-  },
-  {
-    name: "Avenida da Liberdade",
-    position: { lat: 38.7202, lng: -9.1440 }
-  },
-  {
-    name: "Belém Tower",
-    position: { lat: 38.6916, lng: -9.2159 }
-  },
-  {
-    name: "Parque Eduardo VII",
-    position: { lat: 38.7276, lng: -9.1526 }
-  },
-  {
-    name: "IADE",
-    position: { lat: 38.781931, lng: -9.102924}
-  }
-];
+// 🔥 UPDATED: Parking history drawer with EXIT button
+function createParkingHistoryDrawer() {
+  const style = createElement('style');
+  style.html(`
+    .parking-history-drawer {
+      position: fixed;
+      top: 0;
+      right: -350px;
+      width: 350px;
+      height: 100vh;
+      background: white;
+      box-shadow: -4px 0 12px rgba(0,0,0,0.15);
+      transition: right 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .parking-history-drawer.open {
+      right: 0;
+    }
+    .parking-header {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+      background: #f8f9fa;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .parking-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+    .parking-close-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: #f0f0f0;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: bold;
+      color: #666;
+      transition: all 0.2s ease;
+    }
+    .parking-close-btn:hover {
+      background: #e0e0e0;
+      color: #333;
+      transform: scale(1.05);
+    }
+    .parking-history-list {
+      padding: 0;
+      margin: 0;
+    }
+    .parking-entry {
+      display: flex;
+      justify-content: space_between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .parking-entry:hover {
+      background: #f8f9fa;
+    }
+    .parking-entry:last-child {
+      border-bottom: none;
+    }
+    .parking-details {
+      flex: 1;
+    }
+    .parking-date {
+      font-weight: 600;
+      color: #333;
+      margin: 0 0 4px 0;
+    }
+    .parking-time-duration {
+      color: #666;
+      font-size: 14px;
+      margin: 0 0 2px 0;
+    }
+    .parking-cost {
+      font-weight: 600;
+      color: #28a745;
+      font-size: 16px;
+    }
+    .parking-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.5);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      z-index: 999;
+    }
+    .parking-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+    @media (max-width: 768px) {
+      .parking-history-drawer {
+        width: 100vw;
+        right: -100vw;
+      }
+    }
+  `);
+  style.parent(homeCard);
 
-let googleMap = null;
-let userLocationMarker = null;
-let directionsService = null;
-let directionsRenderer = null;
+  parkingOverlay = createDiv().addClass('parking-overlay').parent(homeCard);
+  parkingOverlay.id('parkingOverlay');
+  parkingOverlay.mousePressed(toggleParkingHistoryDrawer);
 
+  parkingHistoryDrawer = createDiv().addClass('parking-history-drawer').parent(homeCard);
+  parkingHistoryDrawer.id('parkingHistoryDrawer');
+
+  const header = createDiv().addClass('parking-header').parent(parkingHistoryDrawer);
+  createDiv('Previous Parkings').addClass('parking-title').parent(header);
+
+  parkingCloseBtn = createButton('×').addClass('parking-close-btn').parent(header);
+  parkingCloseBtn.mousePressed(toggleParkingHistoryDrawer);
+
+  const list = createDiv().addClass('parking-history-list').parent(parkingHistoryDrawer);
+
+  placeholderParkingHistory.forEach(entry => {
+    const entryDiv = createDiv().addClass('parking-entry').parent(list);
+    const details = createDiv().parent(entryDiv);
+    createDiv(entry.date).addClass('parking-date').parent(details);
+    createDiv(`${entry.time} • ${entry.duration}`).addClass('parking-time-duration').parent(details);
+    createDiv(entry.cost).addClass('parking-cost').parent(entryDiv);
+  });
+}
+
+function toggleParkingHistoryDrawer() {
+  if (!parkingHistoryDrawer || !parkingOverlay) return;
+  parkingHistoryDrawer.toggleClass('open');
+  parkingOverlay.toggleClass('open');
+}
 
 window.initMap = function () {
-  googleMap = new google.maps.Map(document.querySelector('.map-area'), {
+  const mapDiv = document.querySelector('.map-area');
+  if (!mapDiv) {
+    console.error('Map div not found!');
+    return;
+  }
+
+  googleMap = new google.maps.Map(mapDiv, {
     center: { lat: 38.7223, lng: -9.1393 },
     zoom: 14,
     disableDefaultUI: true,
@@ -130,7 +310,7 @@ window.initMap = function () {
   directionsService = new google.maps.DirectionsService();
   directionsRenderer = new google.maps.DirectionsRenderer({
     map: googleMap,
-    suppressMarkers: true, //in order to keep the custom pins
+    suppressMarkers: true,
   });
 };
 
@@ -140,14 +320,14 @@ function routeTo(destination) {
     return;
   }
 
-  const origin = userLocationMarker.getPosition(); // user's LatLng
+  const origin = userLocationMarker.getPosition();
   const destLatLng = new google.maps.LatLng(destination.lat, destination.lng);
 
   directionsService.route(
     {
       origin: origin,
       destination: destLatLng,
-      travelMode: google.maps.TravelMode.BICYCLING, // ← Bicycle route
+      travelMode: google.maps.TravelMode.BICYCLING,
     },
     (result, status) => {
       if (status === "OK") {
@@ -159,12 +339,10 @@ function routeTo(destination) {
   );
 }
 
-
-
 function addStaticLandmarks() {
   staticLandmarks.forEach((landmark) => {
     const capacity = Math.floor(Math.random() * 12) + 1;
-    const total = 12; 
+    const total = 12;
     const percent = (capacity / total) * 100;
 
     let pinColor = "green";
@@ -181,26 +359,80 @@ function addStaticLandmarks() {
       }
     });
 
+    const safeId = landmark.name.replace(/\s+/g, '-');
+
     const infoWindow = new google.maps.InfoWindow({
       content: `
         <div class="marker-popup">
           <strong class="popup-title">${landmark.name}</strong>
           <div class="popup-capacity">🚴 Spots available: ${capacity}/${total}</div>
-          <button class="popup-btn" id="route-btn-${landmark.name.replace(/\s+/g,'-')}">Get route to here</button>
+          <button class="popup-btn" id="route-btn-${safeId}">Get route to here</button>
         </div>
       `
     });
 
     marker.addListener("click", () => {
+      if (currentInfoWindow && currentInfoWindow !== infoWindow) {
+        currentInfoWindow.close();
+      }
+      currentInfoWindow = infoWindow;
       infoWindow.open(googleMap, marker);
+
       google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
-        const btn = document.getElementById(`route-btn-${landmark.name.replace(/\s+/g,'-')}`);
-        if (btn) btn.onclick = () => routeTo(landmark.position);
+        const routeBtn = document.getElementById(`route-btn-${safeId}`);
+        if (routeBtn) {
+          routeBtn.onclick = () => routeTo(landmark.position);
+        }
+
+        const signOutBtn = document.getElementById(`signout-btn-${safeId}`);
+        if (signOutBtn) {
+          signOutBtn.onclick = async () => {
+            try {
+              await signOut(auth);
+              localStorage.clear();
+              window.open("/", "_self");
+            } catch (e) {
+              console.error("Error signing out:", e);
+              alert("Could not sign out, please try again.");
+            }
+          };
+        }
       });
     });
   });
+
+  setupMapClickListener();
+  setupEscKeyListener();
 }
 
+function setupMapClickListener() {
+  if (mapClickListener) {
+    google.maps.event.removeListener(mapClickListener);
+  }
+  mapClickListener = google.maps.event.addListener(googleMap, 'click', () => {
+    if (currentInfoWindow) {
+      currentInfoWindow.close();
+      currentInfoWindow = null;
+    }
+  });
+}
+
+function setupEscKeyListener() {
+  if (escKeyListener) {
+    document.removeEventListener('keydown', escKeyListener);
+  }
+
+  escKeyListener = (e) => {
+    if (e.key === 'Escape') {
+      if (currentInfoWindow) {
+        currentInfoWindow.close();
+        currentInfoWindow = null;
+      }
+      toggleParkingHistoryDrawer();
+    }
+  };
+  document.addEventListener('keydown', escKeyListener);
+}
 
 function addUserLocation() {
   if (!navigator.geolocation) return;
@@ -214,7 +446,6 @@ function addUserLocation() {
 
       console.log("User location:", coords);
 
-      // Create marker
       if (!userLocationMarker) {
         userLocationMarker = new google.maps.Marker({
           position: coords,
@@ -232,13 +463,10 @@ function addUserLocation() {
         userLocationMarker.setPosition(coords);
       }
 
-      // 🔥 Center map on user *now that we have the coordinates*
       googleMap.panTo(coords);
     }
   );
 }
-
-
 
 function createAccountDrawer() {
   const accountDrawer = createDiv().addClass('account-drawer').parent(homeCard);
@@ -253,32 +481,36 @@ function createAccountDrawer() {
   const closeBtn = createButton('×').addClass('account-close-btn').parent(header);
   closeBtn.mousePressed(() => accountDrawer.removeClass('open'));
 
-  const signOutBtn = createButton('Sign Out').addClass('account-signout-btn').parent(header);
-  signOutBtn.mousePressed(async () => {
-    await signOut(auth);
-    localStorage.clear();
-    window.open("/", "_self");
-  });
-
-  //Tabs
   const tabs = createDiv().addClass('account-tabs').parent(accountDrawer);
   const tabBtns = [
     createButton('Info').addClass('account-tab-btn active').parent(tabs),
     createButton('Password').addClass('account-tab-btn').parent(tabs),
-    createButton('My Bikes').addClass('account-tab-btn').parent(tabs)
+    createButton('My Bikes').addClass('account-tab-btn').parent(tabs),
+    createButton('My Payment Method').addClass('account-tab-btn').parent(tabs)
   ];
 
   const infoTab = createDiv().addClass('account-tab').parent(accountDrawer);
   const pwTab = createDiv().addClass('account-tab').style('display', 'none').parent(accountDrawer);
   const bikesTab = createDiv().addClass('account-tab').style('display', 'none').parent(accountDrawer);
+  const paymentTab = createDiv().addClass('account-tab').style('display', 'none').parent(accountDrawer);
 
-  //Info tab
   createElement('label', 'Full Name').parent(infoTab);
   createInput(localStorage.getItem('userName') || 'John Doe').attribute('readonly', true).parent(infoTab);
   createElement('label', 'Email').parent(infoTab);
   createInput(localStorage.getItem('userEmail') || '').attribute('readonly', true).parent(infoTab);
+    // 🔥 ADD THIS LOGOUT BUTTON:
+  const logoutBtn = createButton('Sign Out').addClass('account-logout-btn').parent(infoTab);
+  logoutBtn.mousePressed(async () => {
+    try {
+      await signOut(auth);
+      localStorage.clear();
+      window.open("/", "_self");
+    } catch (e) {
+      console.error("Error signing out:", e);
+      alert("Could not sign out, please try again.");
+    }
+  });
 
-  //Password Tab
   createElement('label', 'Current Password').parent(pwTab);
   const currentPwInput = createInput('').attribute('type', 'password').parent(pwTab);
 
@@ -291,13 +523,66 @@ function createAccountDrawer() {
   const changePwBtn = createButton('Change Password').addClass('account-save-btn').parent(pwTab);
   changePwBtn.mousePressed(() => changePassword(currentPwInput.value(), newPwInput.value(), confirmPwInput.value()));
 
-  //Bikes Tab
   createElement('div', 'Your bikes will appear here.').parent(bikesTab);
 
-  //Tab switching
+  createElement('label', 'Cardholder Name').parent(paymentTab);
+  const cardNameInput = createInput('')
+    .attribute('type', 'text')
+    .attribute('placeholder', 'Full name on card')
+    .parent(paymentTab);
+
+  createElement('label', 'Card Number').parent(paymentTab);
+  const cardNumberInput = createInput('')
+    .attribute('type', 'text')
+    .attribute('inputmode', 'numeric')
+    .attribute('maxlength', '19')
+    .attribute('placeholder', 'XXXX XXXX XXXX XXXX')
+    .parent(paymentTab);
+
+  cardNumberInput.input(function () {
+    let v = this.value().replace(/\D/g, '');
+    v = v.slice(0, 16);
+    const groups = v.match(/.{1,4}/g);
+    const formatted = groups ? groups.join(' ') : '';
+    this.value(formatted);
+  });
+
+  createElement('label', 'Expiry Date').parent(paymentTab);
+  const expiryInput = createInput('')
+    .attribute('type', 'text')
+    .attribute('inputmode', 'numeric')
+    .attribute('maxlength', '5')
+    .attribute('placeholder', 'MM/YY')
+    .parent(paymentTab);
+
+  expiryInput.input(function () {
+    let v = this.value().replace(/\D/g, '');
+    v = v.slice(0, 4);
+    if (v.length >= 3) {
+      v = v.slice(0, 2) + '/' + v.slice(2);
+    }
+    this.value(v);
+  });
+
+  createElement('label', 'CVV').parent(paymentTab);
+  const cvvInput = createInput('')
+    .attribute('type', 'text')
+    .attribute('inputmode', 'numeric')
+    .attribute('placeholder', 'CVV')
+    .attribute('maxlength', 3)
+    .parent(paymentTab);
+
+  const savePaymentBtn = createButton('Save Payment Method')
+    .addClass('account-save-btn')
+    .parent(paymentTab);
+
+  savePaymentBtn.mousePressed(() => {
+    alert('Payment details saved (placeholder only).');
+  });
+
   tabBtns.forEach((btn, i) => {
     btn.mousePressed(() => {
-      [infoTab, pwTab, bikesTab].forEach((tab, j) => {
+      [infoTab, pwTab, bikesTab, paymentTab].forEach((tab, j) => {
         tab.style('display', j === i ? '' : 'none');
         tabBtns[j].removeClass('active');
         if (i === j) tabBtns[j].addClass('active');
@@ -305,13 +590,11 @@ function createAccountDrawer() {
     });
   });
 
-  //Expose drawer toggler globally for the navbar button
   window.toggleAccountDrawer = () => {
     accountDrawer.toggleClass('open');
   };
 }
 
-//Password Update Logic
 async function changePassword(currentPassword, newPassword, confirmPassword) {
   const user = auth.currentUser;
 

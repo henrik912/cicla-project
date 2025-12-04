@@ -8,6 +8,15 @@ import {
   updatePassword
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
+import {
+  getFirestore,
+  collection,
+  query,
+  limit,
+  onSnapshot,
+  addDoc
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
 // --- Firebase config ---
 const firebaseConfig = {
   apiKey: "AIzaSyAYJwO4MKFSCfM4iHUTuJTzTzGRkBKrtTI",
@@ -18,7 +27,7 @@ const firebaseConfig = {
   appId: "1:943033387656:web:c08795f4eed3a73279ad3d"
 };
 
-//Initialize Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
@@ -35,6 +44,8 @@ let directionsRenderer = null;
 let parkingOverlay = null;
 let parkingHistoryDrawer = null;
 let parkingCloseBtn = null;
+let db, userBikesUnsubscribe = null;
+let currentUser = null; // store logged‑in user
 
 let placeholderParkingHistory = [
   {
@@ -92,17 +103,27 @@ const staticLandmarks = [
   { name: "JONKOPING", position: { lat: 57.78145, lng: 14.15618 } }
 ];
 
-//Auth gate: delay setup so p5 is ready
+// Auth gate: just keep currentUser in sync
 onAuthStateChanged(auth, (user) => {
   if (user) {
     console.log("User is logged in:", user.email);
-    requestAnimationFrame(() => setup());
+    currentUser = user;
+    if (userBikesUnsubscribe) {
+      userBikesUnsubscribe();
+      userBikesUnsubscribe = null;
+    }
   } else {
+    currentUser = null;
+    if (userBikesUnsubscribe) {
+      userBikesUnsubscribe();
+      userBikesUnsubscribe = null;
+    }
     console.log("No user logged in — redirecting to login.");
     window.open("/", "_self");
   }
 });
 
+// let p5 call setup
 window.setup = () => {};
 
 function setup() {
@@ -146,7 +167,7 @@ function setup() {
   window.initMap();
 }
 
-// 🔥 UPDATED: Parking history drawer with EXIT button
+// Parking history drawer
 function createParkingHistoryDrawer() {
   const style = createElement('style');
   style.html(`
@@ -257,6 +278,64 @@ function createParkingHistoryDrawer() {
         width: 100vw;
         right: -100vw;
       }
+    }
+    .bike-card {
+      background: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 12px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .bike-title {
+      font-weight: 600;
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .bike-detail {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .bike-add-btn {
+      width: 100%;
+      background: #ff4b4b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    .bike-add-btn:hover {
+      background: #ff2a2aff;
+    }
+    @media (max-width: 768px) {
+      .bike-card {
+        margin: 8px 0;
+        padding: 12px;
+      }
+    }
+    .bike-form {
+      padding: 16px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #ffffff;
+    }
+    .bike-form-title {
+      font-weight: 600;
+      font-size: 15px;
+      color: #333;
+      margin-bottom: 4px;
+    }
+    .bike-form input {
+      width: 100%;
+      box-sizing: border-box;
     }
   `);
   style.parent(homeCard);
@@ -468,6 +547,52 @@ function addUserLocation() {
   );
 }
 
+function loadUserBikes(bikesList) {
+  console.log('loadUserBikes currentUser =', currentUser && currentUser.uid);
+  db = getFirestore(app);
+
+  if (!currentUser) {
+    bikesList.html('');
+    createElement('div', 'Please log in to see your bikes.').parent(bikesList);
+    return;
+  }
+
+  bikesList.html('');
+  console.log('Loading bikes for uid', currentUser.uid);
+
+  const bikesQuery = query(
+    collection(db, 'users', currentUser.uid, 'bike'),
+    limit(12)
+  );
+
+  userBikesUnsubscribe = onSnapshot(bikesQuery, (snapshot) => {
+    bikesList.html('');
+
+    if (snapshot.empty) {
+      createElement('div', 'No bikes registered yet.').parent(bikesList);
+      return;
+    }
+
+    snapshot.forEach((bikeDoc) => {
+      const bike = bikeDoc.data();
+      const bikeDiv = createDiv().addClass('bike-card').parent(bikesList);
+
+      createDiv(`${bike.brand || 'Unknown'} ${bike.model || ''}`).addClass('bike-title').parent(bikeDiv);
+      createDiv(`Color: ${bike.color || 'N/A'}`).addClass('bike-detail').parent(bikeDiv);
+      createDiv(`Plate: ${bike.licenceplate || 'N/A'}`).addClass('bike-detail').parent(bikeDiv);
+      createDiv(`Year: ${bike.year || 'N/A'}`).addClass('bike-detail').parent(bikeDiv);
+
+      const addBtn = createButton('Select as current bike').addClass('bike-add-btn').parent(bikeDiv);
+      addBtn.mousePressed(() => {
+        alert(`Adding ${bike.brand || ''} ${bike.model || ''} as current bike`);
+      });
+    });
+  }, (error) => {
+    console.error('Error loading bikes:', error);
+    createElement('div', 'Error loading bikes.').parent(bikesList);
+  });
+}
+
 function createAccountDrawer() {
   const accountDrawer = createDiv().addClass('account-drawer').parent(homeCard);
 
@@ -494,11 +619,62 @@ function createAccountDrawer() {
   const bikesTab = createDiv().addClass('account-tab').style('display', 'none').parent(accountDrawer);
   const paymentTab = createDiv().addClass('account-tab').style('display', 'none').parent(accountDrawer);
 
+  // --- My Bikes form ---
+  const bikeForm = createDiv().addClass('bike-form').parent(bikesTab);
+  createDiv('Add a bike').addClass('bike-form-title').parent(bikeForm);
+  const brandInput = createInput('').attribute('placeholder', 'Brand').parent(bikeForm);
+  const modelInput = createInput('').attribute('placeholder', 'Model').parent(bikeForm);
+  const colorInput = createInput('').attribute('placeholder', 'Color').parent(bikeForm);
+  const plateInput = createInput('').attribute('placeholder', 'Licence plate').parent(bikeForm);
+  const yearInput = createInput('').attribute('placeholder', 'Year').parent(bikeForm);
+
+  const addBikeBtn = createButton('Add Bike')
+    .addClass('bike-add-btn')
+    .parent(bikeForm);
+
+  addBikeBtn.mousePressed(async () => {
+    if (!currentUser) {
+      alert('You must be logged in to add a bike.');
+      return;
+    }
+
+    const brand = brandInput.value().trim();
+    const model = modelInput.value().trim();
+    const color = colorInput.value().trim();
+    const licenceplate = plateInput.value().trim();
+    const year = yearInput.value().trim();
+
+    if (!brand || !model) {
+      alert('Please enter at least brand and model.');
+      return;
+    }
+
+    try {
+      const db = getFirestore(app);
+      await addDoc(
+        collection(db, 'users', currentUser.uid, 'bike'),
+        { brand, model, color, licenceplate, year }
+      );
+      // clear inputs; onSnapshot will refresh list
+      brandInput.value('');
+      modelInput.value('');
+      colorInput.value('');
+      plateInput.value('');
+      yearInput.value('');
+    } catch (e) {
+      console.error('Error adding bike:', e);
+      alert('Could not add bike (check rules).');
+    }
+  });
+
+  // list container (so loadUserBikes doesn't clear the form)
+  const bikesList = createDiv().addClass('bikes-list').parent(bikesTab);
+
   createElement('label', 'Full Name').parent(infoTab);
   createInput(localStorage.getItem('userName') || 'John Doe').attribute('readonly', true).parent(infoTab);
   createElement('label', 'Email').parent(infoTab);
   createInput(localStorage.getItem('userEmail') || '').attribute('readonly', true).parent(infoTab);
-    // 🔥 ADD THIS LOGOUT BUTTON:
+
   const logoutBtn = createButton('Sign Out').addClass('account-logout-btn').parent(infoTab);
   logoutBtn.mousePressed(async () => {
     try {
@@ -523,7 +699,20 @@ function createAccountDrawer() {
   const changePwBtn = createButton('Change Password').addClass('account-save-btn').parent(pwTab);
   changePwBtn.mousePressed(() => changePassword(currentPwInput.value(), newPwInput.value(), confirmPwInput.value()));
 
-  createElement('div', 'Your bikes will appear here.').parent(bikesTab);
+  // Tabs: load bikes when "My Bikes" is clicked
+  tabBtns.forEach((btn, i) => {
+    btn.mousePressed(() => {
+      [infoTab, pwTab, bikesTab, paymentTab].forEach((tab, j) => {
+        tab.style('display', j === i ? '' : 'none');
+        tabBtns[j].removeClass('active');
+        if (i === j) tabBtns[j].addClass('active');
+      });
+
+      if (i === 2) {
+        loadUserBikes(bikesList);
+      }
+    });
+  });
 
   createElement('label', 'Cardholder Name').parent(paymentTab);
   const cardNameInput = createInput('')
@@ -578,16 +767,6 @@ function createAccountDrawer() {
 
   savePaymentBtn.mousePressed(() => {
     alert('Payment details saved (placeholder only).');
-  });
-
-  tabBtns.forEach((btn, i) => {
-    btn.mousePressed(() => {
-      [infoTab, pwTab, bikesTab, paymentTab].forEach((tab, j) => {
-        tab.style('display', j === i ? '' : 'none');
-        tabBtns[j].removeClass('active');
-        if (i === j) tabBtns[j].addClass('active');
-      });
-    });
   });
 
   window.toggleAccountDrawer = () => {

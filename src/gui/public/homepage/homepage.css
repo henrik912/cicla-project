@@ -596,3 +596,68 @@ body {
     opacity: 1;
     visibility: visible;
   }
+
+  .bike-card {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.bike-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 8px;
+}
+.bike-detail {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.bike-add-btn {
+  width: 100%;
+  background: #ff4b4b;
+  color: white;
+  border: none;
+  border-radius: 8px; 
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 12px;
+}
+.bike-add-btn:hover {
+  background: #eb1b1b;
+}
+@media (max-width: 768px) {
+  .bike-card {
+    margin: 8px 0;
+    padding: 12px;
+  }
+}
+
+.bike-form {
+  padding: 12px 16px;
+}
+
+.bike-form {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bike-form-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.bike-form input {
+  width: 100%;
+  box-sizing: border-box;
+}

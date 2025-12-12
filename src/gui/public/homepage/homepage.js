@@ -305,7 +305,7 @@ function createParkingHistoryDrawer() {
       border: none;
       border-radius: 8px;
       padding: 10px;
-      font-size: 14px;
+      font-size: 14px;popup-btn parking-start-btn
       font-weight: 500;
       cursor: pointer;
       margin-top: 12px;
@@ -446,6 +446,7 @@ function addStaticLandmarks() {
           <strong class="popup-title">${landmark.name}</strong>
           <div class="popup-capacity">🚴 Spots available: ${capacity}/${total}</div>
           <button class="popup-btn" id="route-btn-${safeId}">Get route to here</button>
+          <button class="popup-btn parking-start-btn" id="parking-btn-${safeId}">Start Parking</button>
         </div>
       `
     });
@@ -462,6 +463,22 @@ function addStaticLandmarks() {
         if (routeBtn) {
           routeBtn.onclick = () => routeTo(landmark.position);
         }
+
+      const parkingBtn = document.getElementById(`parking-btn-${safeId}`);
+      if (parkingBtn) {
+        parkingBtn.onclick = () => {
+          const parkingData = {
+            name: landmark.name,
+            position: landmark.position,
+            capacity: capacity,
+            total: total
+          };
+          localStorage.setItem('parkingSession', JSON.stringify(parkingData));
+          window.open('/parking', '_self'); // ✅ Now goes to http://localhost:3000/parking
+        };
+      }
+
+
 
         const signOutBtn = document.getElementById(`signout-btn-${safeId}`);
         if (signOutBtn) {
@@ -483,6 +500,7 @@ function addStaticLandmarks() {
   setupMapClickListener();
   setupEscKeyListener();
 }
+
 
 function setupMapClickListener() {
   if (mapClickListener) {
@@ -644,8 +662,8 @@ function createAccountDrawer() {
     const licenceplate = plateInput.value().trim();
     const year = yearInput.value().trim();
 
-    if (!brand || !model) {
-      alert('Please enter at least brand and model.');
+    if (!brand || !model || !color || !licenceplate || !year) {
+      alert('Please enter everything before clicking add bike');
       return;
     }
 
@@ -670,8 +688,6 @@ function createAccountDrawer() {
   // list container (so loadUserBikes doesn't clear the form)
   const bikesList = createDiv().addClass('bikes-list').parent(bikesTab);
 
-  createElement('label', 'Full Name').parent(infoTab);
-  createInput(localStorage.getItem('userName') || 'John Doe').attribute('readonly', true).parent(infoTab);
   createElement('label', 'Email').parent(infoTab);
   createInput(localStorage.getItem('userEmail') || '').attribute('readonly', true).parent(infoTab);
 

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/parking/parking.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+</head>
+<body>
+  <div class="parking-card" id="parkingCard">
+    <div class="navbar">
+      <button class="nav-btn" id="backBtn">←</button>
+        <div class="nav-logo">
+         <img src="/assets/cicla_logo.png" alt="CICLA PARKING" style="height:45px;vertical-align:middle;">
+        </div>
+      <button class="nav-btn" id="helpBtn">?</button>
+    </div>
+
+    <div class="parking-content">
+      <h1 class="parking-title" id="parkingTitle">Session Active</h1>
+      <p class="parking-subtitle">Your bike is safely parked</p>
+
+      <div class="timer-display" id="timerDisplay">
+        <span class="timer-hours">00</span>
+        <span class="timer-colon">:</span>
+        <span class="timer-minutes">00</span>
+        <span class="timer-colon">:</span>
+        <span class="timer-seconds">00</span>
+      </div>
+
+      <div class="price-display">
+        <span id="currentPrice">€0.00</span>
+      </div>
+      <div class="price-rate" id="priceRate">1.2 €/hour</div>
+
+      <button class="end-session-btn" id="endSessionBtn">End Session</button>
+    </div>
+  </div>
+
+  <script src="/parking/parking.js"></script>
+</body>
+</html>

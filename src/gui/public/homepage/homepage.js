@@ -17,6 +17,12 @@ import {
   addDoc
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
+import {
+  getDatabase,
+  ref,
+  set
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
 // --- Firebase config ---
 const firebaseConfig = {
   apiKey: "AIzaSyAYJwO4MKFSCfM4iHUTuJTzTzGRkBKrtTI",
@@ -24,12 +30,17 @@ const firebaseConfig = {
   projectId: "cicla-project",
   storageBucket: "cicla-project.firebasestorage.app",
   messagingSenderId: "943033387656",
-  appId: "1:943033387656:web:c08795f4eed3a73279ad3d"
+  appId: "1:943033387656:web:c08795f4eed3a73279ad3d",
+  databaseURL: "https://cicla-project-default-rtdb.europe-west1.firebasedatabase.app"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+// 🔥 Realtime Database (for IoT gate control)
+const rtdb = getDatabase(app);
+
 
 // 🔥 GLOBALS
 let homeCard, navbar, menuBtn, logo, accountBtn, mapArea, findNearestBtn, helpBtn;
@@ -464,19 +475,31 @@ function addStaticLandmarks() {
           routeBtn.onclick = () => routeTo(landmark.position);
         }
 
-      const parkingBtn = document.getElementById(`parking-btn-${safeId}`);
+    const parkingBtn = document.getElementById(`parking-btn-${safeId}`);
       if (parkingBtn) {
-        parkingBtn.onclick = () => {
+        parkingBtn.onclick = async () => {
+
           const parkingData = {
             name: landmark.name,
             position: landmark.position,
-            capacity: capacity,
-            total: total
+            capacity,
+            total
           };
+
           localStorage.setItem('parkingSession', JSON.stringify(parkingData));
-          window.open('/parking', '_self'); // ✅ Now goes to http://localhost:3000/parking
+
+          // 🚪 SEND GATE OPEN REQUEST TO ESP32
+          try {
+            await set(ref(rtdb, "GateControl/open_request"), 1);
+            console.log("Gate open request sent");
+          } catch (err) {
+            console.error("Failed to send gate request:", err);
+          }
+
+          window.open('/parking', '_self');
         };
       }
+
 
 
 

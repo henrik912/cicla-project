@@ -2,9 +2,24 @@
 // This p5.js sketch turns the parking screen into a living system of
 // intelligent agents whose behaviour reacts to time and parking price. [file:1]
 
+// --- Firebase initialization ---
+const firebaseConfig = {
+  apiKey: "AIzaSyAYJwO4MKFSCfM4iHUTuJTzTzGRkBKrtTI",
+  authDomain: "cicla-project.firebaseapp.com",
+  projectId: "cicla-project",
+  storageBucket: "cicla-project.firebasestorage.app",
+  messagingSenderId: "943033387656",
+  appId: "1:943033387656:web:c08795f4eed3a73279ad3d",
+  databaseURL: "https://cicla-project-default-rtdb.europe-west1.firebasedatabase.app",
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+
 let agents = [];               // all active agents in the scene
 let startTime;                 // when the parking session started
-let pricePerHour = 50000;        // € per hour
+let pricePerHour = 1.8;        // € per hour
 let currentPrice = 0;          // live price, updated every frame
 let parkingSessionData = null; // metadata about the selected station
 
@@ -242,14 +257,32 @@ function windowResized() {
 }
 
 // --- Plain DOM hooks for buttons (outside p5) ----------------------------
+// --- Plain DOM hooks for buttons (outside p5) ----------------------------
 document.addEventListener('DOMContentLoaded', () => {
   const endBtn  = document.getElementById('endSessionBtn');
   const backBtn = document.getElementById('backBtn');
 
   if (endBtn) {
-    endBtn.addEventListener('click', () => {
-      if (confirm('End parking session?')) {
-        window.location.href = '/home';
+    endBtn.addEventListener('click', async () => {
+      if (!confirm('End parking session?')) return;
+
+      try {
+        // 🔥 Trigger gate open (same as start parking)
+        await firebase
+          .database()
+          .ref('GateControl/open_request')
+          .set(1);
+
+        console.log('Gate open request sent (end session)');
+
+        // Small delay to guarantee Firebase write
+        setTimeout(() => {
+          window.location.href = '/home';
+        }, 300);
+
+      } catch (err) {
+        console.error('Failed to trigger gate:', err);
+        alert('Could not open gate. Please try again.');
       }
     });
   }

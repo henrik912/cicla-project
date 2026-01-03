@@ -31,7 +31,7 @@ const sketch = (p) => {
     card = p.createDiv();
     card.addClass("login-card");
 
-    const logo = p.createImg('assets/cicla_logo.png', 'Cicla Logo');
+    const logo = p.createImg('assets/logo_podlock.png', 'Cicla Logo');
     logo.parent(card);
     logo.addClass('login-logo');
 

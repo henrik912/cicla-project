@@ -67,7 +67,7 @@ body {
   align-items: center;
   gap: 10px;
   font-size: 20px;
-  color: #ff4b4b;
+  color: #F39200;
   font-weight: bold;
 }
 
@@ -95,7 +95,7 @@ body {
   font-size: 22px;
   font-weight: 700;
   margin-bottom: 10px;
-  background: linear-gradient(135deg, #ff4b4b, #ff8e8e);
+  background: linear-gradient(135deg, #F39200, #E07F00);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -123,7 +123,7 @@ body {
   font-weight: 700;
   display: inline-block;
   min-width: 50px;
-  background: linear-gradient(135deg, #ff4b4b, #ff8e8e);
+  background: linear-gradient(135deg, #F39200, #E07F00);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -132,7 +132,7 @@ body {
 .timer-colon {
   font-size: 30px;
   font-weight: 700;
-  color: #ff4b4b;
+  color: #F39200;
   margin: 0 6px;
 }
 
@@ -149,7 +149,7 @@ body {
 }
 
 .end-session-btn {
-  background: #ff4b4b;
+  background: #F39200;
   color: white;
   border: none;
   border-radius: 28px;
@@ -159,4 +159,34 @@ body {
   box-shadow: 0 8px 22px rgba(255,75,75,0.12);
   cursor: pointer;
   margin-top: 16px;
+}
+
+.end-session-btn {
+  background: #F39200;
+  color: white;
+  border: none;
+  border-radius: 28px;
+  padding: 12px 26px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 22px rgba(255, 147, 0, 0.25);
+  cursor: pointer;
+  margin-top: 16px;
+  transition: 
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
+}
+
+/* Hover */
+.end-session-btn:hover {
+  background: linear-gradient(135deg, #F39200, #E07F00);
+  box-shadow: 0 10px 26px rgba(255, 147, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Active / pressed */
+.end-session-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(255, 147, 0, 0.3);
 }

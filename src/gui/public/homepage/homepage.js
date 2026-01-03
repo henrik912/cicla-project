@@ -148,7 +148,7 @@ function setup() {
   navbar.parent(homeCard);
 
   menuBtn = createDiv("☰").addClass('nav-btn').parent(navbar);
-  logo = createDiv('<img src="assets/cicla_logo.png" style="height:45px;vertical-align:middle;">')
+  logo = createDiv('<img src="assets/logo_podlock.png" style="height:150px;vertical-align:middle;">')
     .addClass('nav-logo')
     .parent(navbar);
   accountBtn = createDiv("👤").addClass('nav-btn').parent(navbar);
@@ -229,7 +229,7 @@ function createParkingHistoryDrawer() {
     }
     .parking-close-btn:hover {
       background: #e0e0e0;
-      color: #333;
+      color: #E07F00;
       transform: scale(1.05);
     }
     .parking-history-list {
@@ -311,7 +311,7 @@ function createParkingHistoryDrawer() {
     }
     .bike-add-btn {
       width: 100%;
-      background: #ff4b4b;
+      background: #f39200;
       color: white;
       border: none;
       border-radius: 8px;
@@ -322,7 +322,7 @@ function createParkingHistoryDrawer() {
       margin-top: 12px;
     }
     .bike-add-btn:hover {
-      background: #ff2a2aff;
+      background: #E07F00;
     }
     @media (max-width: 768px) {
       .bike-card {

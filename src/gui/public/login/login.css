@@ -67,19 +67,19 @@ button {
 }
 
 .login-btn {
-  background-color: #ff4b4b;
+  background-color: #f39200;
   color: white;
   border: none;
 }
 
 .login-btn:hover {
-  background-color: #ff2e2e;
+  background-color: #E07F00;
 }
 
 .signup-btn {
   background-color: white;
-  border: 1px solid #ff4b4b;
-  color: #ff4b4b;
+  border: 1px solid #f39200;
+  color: #f39200;
   margin-top: 8px;
 }
 
@@ -142,7 +142,7 @@ body {
   background: transparent;
   border: none;
   font-size: 26px;
-  color: #ff4b4b;
+  color: #f39200;
   cursor: pointer;
 }
 

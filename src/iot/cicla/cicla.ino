@@ -9,10 +9,10 @@
 #include <ESP32Servo.h>
 
 //fill these in with the keys
-#define WIFI_SSID ""  
-#define WIFI_PASSWORD ""
-#define API_KEY ""
-#define DATABASE_URL ""
+#define WIFI_SSID "Henrik"  
+#define WIFI_PASSWORD "abcabcabc"
+#define API_KEY "AIzaSyAYJwO4MKFSCfM4iHUTuJTzTzGRkBKrtTI"
+#define DATABASE_URL "https://cicla-project-default-rtdb.europe-west1.firebasedatabase.app/"
 
 //ULTRA SONIC SENSOR
 const int trigPin = 32;

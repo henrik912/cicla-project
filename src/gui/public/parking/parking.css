@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "LFT Etica";
+  src: url("/assets/LFT_Etica_Regular.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -5,7 +13,7 @@ html, body {
   min-height: 100vh;
   width: 100vw;
   min-width: 100vw;
-  font-family: "Poppins", sans-serif;
+  font-family: "LFT Etica", sans-serif;
   background: white;
   overflow-x: hidden;
 }

@@ -179,9 +179,30 @@ function setup() {
 }
 
 // Parking history drawer
+// Parking history drawer
 function createParkingHistoryDrawer() {
-  const style = createElement('style');
+  const style = createElement("style");
   style.html(`
+    /* ===== FONT ===== */
+    @font-face {
+      font-family: "LFT Etica";
+      src: url("/assets/LFT_Etica_Regular.otf") format("opentype");
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    /* Force font everywhere (p5 + maps + drawers) */
+    html, body, * {
+      font-family: "LFT Etica",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        sans-serif;
+    }
+
+    /* ===== Parking history drawer ===== */
     .parking-history-drawer {
       position: fixed;
       top: 0;
@@ -193,11 +214,12 @@ function createParkingHistoryDrawer() {
       transition: right 0.3s ease;
       z-index: 1000;
       overflow-y: auto;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
+
     .parking-history-drawer.open {
       right: 0;
     }
+
     .parking-header {
       padding: 20px;
       border-bottom: 1px solid #eee;
@@ -206,12 +228,14 @@ function createParkingHistoryDrawer() {
       justify-content: space-between;
       align-items: center;
     }
+
     .parking-title {
       margin: 0;
       font-size: 18px;
       font-weight: 600;
       color: #333;
     }
+
     .parking-close-btn {
       width: 36px;
       height: 36px;
@@ -227,47 +251,57 @@ function createParkingHistoryDrawer() {
       color: #666;
       transition: all 0.2s ease;
     }
+
     .parking-close-btn:hover {
       background: #e0e0e0;
       color: #E07F00;
       transform: scale(1.05);
     }
+
     .parking-history-list {
       padding: 0;
       margin: 0;
     }
+
     .parking-entry {
       display: flex;
-      justify-content: space_between;
+      justify-content: space-between;
       padding: 16px 20px;
       border-bottom: 1px solid #f0f0f0;
       transition: background 0.2s;
       cursor: pointer;
     }
+
     .parking-entry:hover {
       background: #f8f9fa;
     }
+
     .parking-entry:last-child {
       border-bottom: none;
     }
+
     .parking-details {
       flex: 1;
     }
+
     .parking-date {
       font-weight: 600;
       color: #333;
-      margin: 0 0 4px 0;
+      margin-bottom: 4px;
     }
+
     .parking-time-duration {
       color: #666;
       font-size: 14px;
-      margin: 0 0 2px 0;
+      margin-bottom: 2px;
     }
+
     .parking-cost {
       font-weight: 600;
       color: #28a745;
       font-size: 16px;
     }
+
     .parking-overlay {
       position: fixed;
       top: 0;
@@ -280,16 +314,20 @@ function createParkingHistoryDrawer() {
       transition: all 0.3s ease;
       z-index: 999;
     }
+
     .parking-overlay.open {
       opacity: 1;
       visibility: visible;
     }
+
     @media (max-width: 768px) {
       .parking-history-drawer {
         width: 100vw;
         right: -100vw;
       }
     }
+
+    /* ===== Bikes ===== */
     .bike-card {
       background: #f8f9fa;
       border: 1px solid #e0e0e0;
@@ -298,17 +336,20 @@ function createParkingHistoryDrawer() {
       margin: 12px 0;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
+
     .bike-title {
       font-weight: 600;
       font-size: 16px;
       color: #333;
       margin-bottom: 8px;
     }
+
     .bike-detail {
       color: #666;
       font-size: 14px;
       margin-bottom: 4px;
     }
+
     .bike-add-btn {
       width: 100%;
       background: #f39200;
@@ -316,20 +357,16 @@ function createParkingHistoryDrawer() {
       border: none;
       border-radius: 8px;
       padding: 10px;
-      font-size: 14px;popup-btn parking-start-btn
+      font-size: 14px;
       font-weight: 500;
       cursor: pointer;
       margin-top: 12px;
     }
+
     .bike-add-btn:hover {
       background: #E07F00;
     }
-    @media (max-width: 768px) {
-      .bike-card {
-        margin: 8px 0;
-        padding: 12px;
-      }
-    }
+
     .bike-form {
       padding: 16px;
       border-bottom: 1px solid #f0f0f0;
@@ -338,19 +375,21 @@ function createParkingHistoryDrawer() {
       gap: 8px;
       background: #ffffff;
     }
+
     .bike-form-title {
       font-weight: 600;
       font-size: 15px;
       color: #333;
       margin-bottom: 4px;
     }
+
     .bike-form input {
       width: 100%;
       box-sizing: border-box;
     }
   `);
-  style.parent(homeCard);
 
+  style.parent(homeCard);
   parkingOverlay = createDiv().addClass('parking-overlay').parent(homeCard);
   parkingOverlay.id('parkingOverlay');
   parkingOverlay.mousePressed(toggleParkingHistoryDrawer);

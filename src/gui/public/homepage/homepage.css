@@ -1,3 +1,12 @@
+@font-face {
+  font-family: "LFT Etica";
+  src: url("/assets/LFT_Etica_Regular.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+
 /* =============== Global layout =============== */
 
 html,
@@ -8,10 +17,16 @@ body {
   min-height: 100vh;
   width: 100vw;
   min-width: 100vw;
-  font-family: "Poppins", sans-serif;
+  font-family: "LFT Etica",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   background: #ffffff;
   overflow-x: hidden;
 }
+
 
 body {
   display: flex;
@@ -273,7 +288,6 @@ body {
 .marker-popup {
   min-width: 180px;
   max-width: 220px;
-  font-family: "Poppins", sans-serif;
   padding: 14px 16px;
   background: #ffffff;
   border-radius: 12px;
